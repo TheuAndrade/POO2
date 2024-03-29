@@ -75,14 +75,20 @@ public class MainFrame extends JFrame implements ActionListener, WindowListener 
             // Abre a janela para adicionar um novo item
             new AdicionarItemFrame(conexao);
         } else if (e.getSource() == btnAtualizar) {
-            JOptionPane.showMessageDialog(this, "Ação do botão Atualizar");
+        	int selectedRow = table.getSelectedRow();
+        	if (selectedRow != -1) {
+                Object[] itemSelecionado = new Object[3];
+                for (int i = 0; i < 3; i++) {
+                    itemSelecionado[i] = table.getValueAt(selectedRow, i);
+                }
+                new EditarItemFrame(itemSelecionado);
         } else if (e.getSource() == btnRemover) {
             JOptionPane.showMessageDialog(this, "Ação do botão Remover");
         } else if (e.getSource() == btnFiltrar) { // Novo botão adicionado
             // Lógica para filtrar os itens
             JOptionPane.showMessageDialog(this, "Ação do botão Filtrar");
         }
-    }
+    }}
 
     // Implementação do método windowClosing para fechar a conexão quando o JFrame for fechado
     public void windowClosing(WindowEvent e) {

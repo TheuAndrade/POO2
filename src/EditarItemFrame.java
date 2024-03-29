@@ -1,75 +1,77 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class EditarItemFrame extends JFrame implements ActionListener {
-    JTextField txtDescricao, txtPreco;
-    JButton btnAtualizar;
-    int id;
-    Connection conexao;
+public class EditarItemFrame extends JFrame {
+    private JTextField txtDescricao;
+    private JTextField txtValor;
+    private Object[] itemSelecionado;
 
-    public EditarItemFrame(Connection conexao, int id) {
-        super("Editar Detalhes do Item");
-        this.conexao = conexao;
-        this.id = id;
+    public EditarItemFrame(Object[] itemSelecionado) {
+        this.itemSelecionado = itemSelecionado;
 
-        // Configurações do JFrame
+        setTitle("Editar Item");
         setSize(300, 150);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Layout para organizar os componentes
-        setLayout(new GridLayout(3, 2));
-
-        // Inicializa os componentes
+        JPanel panel = new JPanel(new GridLayout(3, 2));
         JLabel lblDescricao = new JLabel("Descrição:");
-        txtDescricao = new JTextField(10);
-        JLabel lblPreco = new JLabel("Preço:");
-        txtPreco = new JTextField(10);
-        btnAtualizar = new JButton("Atualizar");
+        JLabel lblValor = new JLabel("Valor:");
 
-        // Adiciona ActionListener ao botão
-        btnAtualizar.addActionListener(this);
+        txtDescricao = new JTextField(itemSelecionado[1].toString());
+        txtValor = new JTextField(itemSelecionado[2].toString());
 
-        // Adiciona os componentes ao JFrame
-        add(lblDescricao);
-        add(txtDescricao);
-        add(lblPreco);
-        add(txtPreco);
-        add(btnAtualizar);
+        panel.add(lblDescricao);
+        panel.add(txtDescricao);
+        panel.add(lblValor);
+        panel.add(txtValor);
 
-        // Exibe o JFrame
+        JButton btnAtualizar = new JButton("Atualizar");
+        btnAtualizar.addActionListener(e -> {
+            atualizarItem();
+        });
+        panel.add(btnAtualizar);
+
+        add(panel);
         setVisible(true);
     }
 
-    // Implementação do método actionPerformed para tratar eventos de botão
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnAtualizar) {
-            String descricao = txtDescricao.getText();
-            double preco = Double.parseDouble(txtPreco.getText());
-            if (!descricao.isEmpty() && !txtPreco.getText().isEmpty()) {
+    private void atualizarItem() {
+        String novaDescricao = txtDescricao.getText();
+        String novoValor = txtValor.getText();
+        int id = (int) itemSelecionado[0];
+
+        Connection conexao = null;
+        PreparedStatement statement = null;
+        try {
+            conexao = DataBaseConnection.conectar();
+            String query = "UPDATE Produtos SET Descricao = ?, Preco = ? WHERE Id = ?";
+            statement = conexao.prepareStatement(query);
+            statement.setString(1, novaDescricao);
+            statement.setString(2, novoValor);
+            statement.setInt(3, id);
+            statement.executeUpdate();
+            JOptionPane.showMessageDialog(this, "Valores atualizados com sucesso!");
+            dispose();
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Erro ao atualizar os valores: " + ex.getMessage());
+        } finally {
+            if (statement != null) {
                 try {
-                    // Query SQL para atualizar os valores
-                    String sql = "UPDATE produtos SET descricao = ?, preco = ? WHERE id = ?";
-                    PreparedStatement stmt = conexao.prepareStatement(sql);
-                    stmt.setString(1, descricao);
-                    stmt.setDouble(2, preco);
-                    stmt.setInt(3, id);
-                    // Executa a atualização
-                    int rowsUpdated = stmt.executeUpdate();
-                    if (rowsUpdated > 0) {
-                        JOptionPane.showMessageDialog(this, "Valores atualizados com sucesso!");
-                    } else {
-                        JOptionPane.showMessageDialog(this, "Falha ao atualizar valores.");
-                    }
+                    statement.close();
                 } catch (SQLException ex) {
                     ex.printStackTrace();
                 }
-            } else {
-                JOptionPane.showMessageDialog(this, "Por favor, preencha todos os campos.");
+            }
+            if (conexao != null) {
+                try {
+                    conexao.close();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
             }
         }
     }
