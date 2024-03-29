@@ -61,7 +61,6 @@ public class MainFrame extends JFrame implements ActionListener, WindowListener 
         setVisible(true);
     }
 
-    // Implementação do método actionPerformed para tratar eventos de botão
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnListar) {
             // Chama o método para listar os itens do banco de dados
@@ -86,10 +85,11 @@ public class MainFrame extends JFrame implements ActionListener, WindowListener 
         } else if (e.getSource() == btnRemover) {
             new RemoverItem(conexao);
         } else if (e.getSource() == btnFiltrar) {
-            // Lógica para filtrar os itens
-            JOptionPane.showMessageDialog(this, "Ação do botão Filtrar");
+            // Abre a janela para filtrar os itens
+            new FiltrarItemFrame(conexao, table); // Passa a instância atual da classe Produto
         }
     }
+
 
     // Implementação do método windowClosing para fechar a conexão quando o JFrame for fechado
     public void windowClosing(WindowEvent e) {
