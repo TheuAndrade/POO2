@@ -1,104 +1,85 @@
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.sql.Connection;
-import java.sql.SQLException;
+import javax.swing.*;
 
 public class MainFrame extends JFrame implements ActionListener, WindowListener {
-    JButton btnListar, btnAdicionar, btnAtualizar, btnRemover, btnFiltrar; // Novo botão adicionado
-    JTable table;
+    JButton btnProdutos, btnClientes, btnVendas; // Novos botões
     Connection conexao;
-    ListagemDoBanco listagemDoBanco;
 
     public MainFrame(Connection conexao) {
-        super("Exemplo de JFrame com Botões e JTable");
+        super("Menu Principal");
         this.conexao = conexao;
-        this.listagemDoBanco = new ListagemDoBanco(conexao);
 
         // Configurações do JFrame
-        setSize(600, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(600, 400); // Defina o tamanho aqui ou use pack() após adicionar os componentes
         setLocationRelativeTo(null);
 
-        // Layout para organizar os componentes
+        // Layout principal do JFrame (BorderLayout)
         setLayout(new BorderLayout());
 
-        // Panel para os botões
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 5)); // Alteração no layout do painel de botões
-        // Inicializa os botões
-        btnListar = new JButton("Listar");
-        btnAdicionar = new JButton("Adicionar");
-        btnAtualizar = new JButton("Atualizar");
-        btnRemover = new JButton("Remover");
-        btnFiltrar = new JButton("Filtrar"); // Novo botão adicionado
-        // Adiciona ActionListener aos botões
-        btnListar.addActionListener(this);
-        btnAdicionar.addActionListener(this);
-        btnAtualizar.addActionListener(this);
-        btnRemover.addActionListener(this);
-        btnFiltrar.addActionListener(this); // Novo botão adicionado
-        // Adiciona os botões ao painel
-        buttonPanel.add(btnListar);
-        buttonPanel.add(btnAdicionar);
-        buttonPanel.add(btnAtualizar);
-        buttonPanel.add(btnRemover);
-        buttonPanel.add(btnFiltrar); // Novo botão adicionado
-        // Adiciona o painel de botões ao JFrame
-        add(buttonPanel, BorderLayout.NORTH);
+        // Cabeçalho com 15% do tamanho da página
+        JPanel headerPanel = new JPanel();
+        headerPanel.setPreferredSize(new Dimension(getWidth(), (int) (getHeight() * 0.15))); // 15% do tamanho da página
+        headerPanel.setBackground(new Color(64, 64, 64)); // Fundo cinza escuro
+        headerPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10)); // Centralizar os componentes com espaçamento
 
-        // Inicializa a JTable
-        table = new JTable();
-        // Adiciona a JTable a um JScrollPane para possibilitar a rolagem
-        JScrollPane scrollPane = new JScrollPane(table);
-        // Adiciona o JScrollPane ao JFrame
-        add(scrollPane, BorderLayout.CENTER);
+        // Rótulo para o texto principal no cabeçalho
+        JLabel lblPrincipal = new JLabel("Principal");
+        lblPrincipal.setForeground(Color.WHITE); // Texto em branco
+        lblPrincipal.setFont(new Font("Arial", Font.BOLD, 24)); // Fonte e tamanho
+
+        // Adicionar o rótulo ao cabeçalho
+        headerPanel.add(lblPrincipal);
+
+        // Adicionar o cabeçalho ao topo do JFrame
+        add(headerPanel, BorderLayout.NORTH);
+
+        // JPanel para os botões
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 50, 160)); // Layout dos botões
+        setLayout(new BorderLayout());
+
+        // Inicializa os botões
+        btnProdutos = new JButton("Produtos");
+        btnClientes = new JButton("Clientes");
+        btnVendas = new JButton("Vendas");
+
+        // Adiciona ActionListener aos botões
+        btnProdutos.addActionListener(this);
+        btnClientes.addActionListener(this);
+        btnVendas.addActionListener(this);
+
+        // Adiciona os botões ao JPanel
+        buttonPanel.add(btnProdutos);
+        buttonPanel.add(btnClientes);
+        buttonPanel.add(btnVendas);
+
+        // Adiciona o JPanel dos botões ao centro do JFrame
+        add(buttonPanel, BorderLayout.CENTER);
 
         // Adiciona o WindowListener ao JFrame
         addWindowListener(this);
-
-        // Exibe o JFrame
+        
+        // Exibir o JFrame
         setVisible(true);
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnListar) {
-            // Chama o método para listar os itens do banco de dados
-            try {
-                DefaultTableModel model = listagemDoBanco.listarItens();
-                table.setModel(model);
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
-        } else if (e.getSource() == btnAdicionar) {
-            // Abre a janela para adicionar um novo item
-            new AdicionarItemFrame(conexao);
-        } else if (e.getSource() == btnAtualizar) {
-            int selectedRow = table.getSelectedRow();
-            if (selectedRow != -1) {
-                Object[] itemSelecionado = new Object[3];
-                for (int i = 0; i < 3; i++) {
-                    itemSelecionado[i] = table.getValueAt(selectedRow, i);
-                }
-                new EditarItemFrame(itemSelecionado);
-            }
-        } else if (e.getSource() == btnRemover) {
-            new RemoverItem(conexao);
-        } else if (e.getSource() == btnFiltrar) {
-            // Abre a janela para filtrar os itens
-            new FiltrarItemFrame(conexao, table); // Passa a instância atual da classe Produto
+        if (e.getSource() == btnProdutos) {
+            // Abrir a tela de produtos
+            new ProdutosFrame(conexao);
+        } else if (e.getSource() == btnClientes) {
+            // Abrir uma nova instância do MainFrame para clientes
+            new ClientesFrame(conexao);
+        } else if(e.getSource() == btnVendas) {
+        	new VendasFrame(conexao);
         }
-    }
+        }
 
-
-    // Implementação do método windowClosing para fechar a conexão quando o JFrame for fechado
-    public void windowClosing(WindowEvent e) {
-        // Fechar conexão com o banco de dados
-        DataBaseConnection.fecharConexao(conexao);
-    }
-
-    // Implementações dos outros métodos de WindowListener (não são usados neste caso, mas precisam ser implementados)
+    // Métodos da interface WindowListener
     public void windowOpened(WindowEvent e) {}
+    public void windowClosing(WindowEvent e) {}
     public void windowClosed(WindowEvent e) {}
     public void windowIconified(WindowEvent e) {}
     public void windowDeiconified(WindowEvent e) {}

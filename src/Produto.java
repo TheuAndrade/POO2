@@ -1,158 +1,69 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import javax.swing.table.DefaultTableModel;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 
 
-public class Produto extends JFrame implements ActionListener, WindowListener {
-    JButton btnListar, btnAdicionar, btnAtualizar, btnRemover, btnFiltrar;
-    JTable table;
-    Connection conexao;
-    ListagemDoBanco listagemDoBanco;
+//////////////ADICIONAR ITEM 
 
-    public Produto(Connection conexao) {
-        super("Exemplo de JFrame com Botões e JTable");
-        this.conexao = conexao;
-        this.listagemDoBanco = new ListagemDoBanco(conexao);
-
-        // Configurações do JFrame
-        setSize(600, 400);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-
-        // Layout para organizar os componentes
-        setLayout(new BorderLayout());
-
-        // Panel para os botões
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 5));
-        // Inicializa os botões
-        btnListar = new JButton("Listar");
-        btnAdicionar = new JButton("Adicionar");
-        btnAtualizar = new JButton("Atualizar");
-        btnRemover = new JButton("Remover");
-        btnFiltrar = new JButton("Filtrar");
-        // Adiciona ActionListener aos botões
-        btnListar.addActionListener(this);
-        btnAdicionar.addActionListener(this);
-        btnAtualizar.addActionListener(this);
-        btnRemover.addActionListener(this);
-        btnFiltrar.addActionListener(this);
-        // Adiciona os botões ao painel
-        buttonPanel.add(btnListar);
-        buttonPanel.add(btnAdicionar);
-        buttonPanel.add(btnAtualizar);
-        buttonPanel.add(btnRemover);
-        buttonPanel.add(btnFiltrar);
-        // Adiciona o painel de botões ao JFrame
-        add(buttonPanel, BorderLayout.NORTH);
-
-        // Inicializa a JTable
-        table = new JTable();
-        // Adiciona a JTable a um JScrollPane para possibilitar a rolagem
-        JScrollPane scrollPane = new JScrollPane(table);
-        // Adiciona o JScrollPane ao JFrame
-        add(scrollPane, BorderLayout.CENTER);
-
-        // Adiciona o WindowListener ao JFrame
-        addWindowListener(this);
-
-        // Exibe o JFrame
-        setVisible(true);
-    }
-
-    // Implementação do método actionPerformed para tratar eventos de botão
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnListar) {
-            try {
-                DefaultTableModel model = listagemDoBanco.listarItens();
-                table.setModel(model);
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
-        } else if (e.getSource() == btnAdicionar) {
-            new AdicionarItemFrame(conexao);
-        } else if (e.getSource() == btnAtualizar) {
-            int selectedRow = table.getSelectedRow();
-            if (selectedRow != -1) {
-                Object[] itemSelecionado = new Object[3];
-                for (int i = 0; i < 3; i++) {
-                    itemSelecionado[i] = table.getValueAt(selectedRow, i);
-                }
-                new EditarItemFrame(itemSelecionado);
-            }
-        } else if (e.getSource() == btnRemover) {
-            new RemoverItem(conexao);
-        } else if (e.getSource() == btnFiltrar) {
-            JOptionPane.showMessageDialog(this, "Ação do botão Filtrar");
-        }
-    }
-
-    // Implementação do método windowClosing para fechar a conexão quando o JFrame for fechado
-    public void windowClosing(WindowEvent e) {
-        DataBaseConnection.fecharConexao(conexao);
-    }
-
-    // Implementações dos outros métodos de WindowListener (não são usados neste caso, mas precisam ser implementados)
-    public void windowOpened(WindowEvent e) {}
-    public void windowClosed(WindowEvent e) {}
-    public void windowIconified(WindowEvent e) {}
-    public void windowDeiconified(WindowEvent e) {}
-    public void windowActivated(WindowEvent e) {}
-    public void windowDeactivated(WindowEvent e) {}
-}
-
-class AdicionarItemFrame extends JFrame implements ActionListener {
-    JTextField txtDescricao, txtPreco;
-    JButton btnAdicionar;
-    Connection conexao;
+class AdicionarItemFrame extends JFrame {
+    private JTextField txtDescricao, txtPreco;
+    private JButton btnAdicionar;
+    private Connection conexao;
+    private JFrame frame; // Declare frame as a class-level field
 
     public AdicionarItemFrame(Connection conexao) {
-        super("Adicionar Item");
         this.conexao = conexao;
 
-        setSize(300, 150);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setLocationRelativeTo(null);
+        frame = new JFrame("Adicionar Item"); // Initialize frame
+        frame.setSize(300, 150);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        frame.setLocationRelativeTo(null);
 
-        setLayout(new GridLayout(3, 2));
+        JPanel panel = new JPanel(new GridLayout(3, 2));
+        JLabel lblDescricao = new JLabel("Descrição:");
+        JLabel lblPreco = new JLabel("Preço:");
 
         txtDescricao = new JTextField();
         txtPreco = new JTextField();
 
         btnAdicionar = new JButton("Adicionar");
-        btnAdicionar.addActionListener(this);
+        btnAdicionar.addActionListener(e -> adicionarItem());
 
-        add(new JLabel("Descrição:"));
-        add(txtDescricao);
-        add(new JLabel("Preço:"));
-        add(txtPreco);
-        add(btnAdicionar);
+        panel.add(lblDescricao);
+        panel.add(txtDescricao);
+        panel.add(lblPreco);
+        panel.add(txtPreco);
+        panel.add(btnAdicionar);
 
-        setVisible(true);
+        frame.add(panel);
+        frame.setVisible(true);
     }
 
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnAdicionar) {
-            String descricao = txtDescricao.getText().trim();
-            String precoStr = txtPreco.getText().trim();
-            if (descricao.isEmpty() || precoStr.isEmpty()) {
-                System.out.println("Os campos não podem estar vazios.");
-            } else {
-                try {
-                    double preco = Double.parseDouble(precoStr);
-                    inserirItem(descricao, preco);
-                    dispose();
-                } catch (NumberFormatException ex) {
-                    System.out.println("Preço inválido.");
-                }
-            }
+    private void adicionarItem() {
+        String descricao = txtDescricao.getText().trim();
+        String precoStr = txtPreco.getText().trim();
+
+        if (descricao.isEmpty() || precoStr.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "Os campos não podem estar vazios.");
+            return;
+        }
+
+        try {
+            double preco = Double.parseDouble(precoStr);
+            inserirItem(descricao, preco);
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(null, "Preço inválido.");
         }
     }
+    
 
     private void inserirItem(String descricao, double preco) {
         try {
@@ -162,7 +73,8 @@ class AdicionarItemFrame extends JFrame implements ActionListener {
             stmt.setDouble(2, preco);
             stmt.executeUpdate();
             stmt.close();
-            System.out.println("Item adicionado com sucesso.");
+            JOptionPane.showMessageDialog(null, "Item adicionado com sucesso.");
+            frame.dispose(); // Close the frame
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -170,83 +82,7 @@ class AdicionarItemFrame extends JFrame implements ActionListener {
 }
 
 
-
-
-class EditarItemFrame extends JFrame {
-    private JTextField txtDescricao;
-    private JTextField txtValor;
-    private Object[] itemSelecionado;
-
-    public EditarItemFrame(Object[] itemSelecionado) {
-        this.itemSelecionado = itemSelecionado;
-
-        setTitle("Editar Item");
-        setSize(300, 150);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setLocationRelativeTo(null);
-
-        JPanel panel = new JPanel(new GridLayout(3, 2));
-        JLabel lblDescricao = new JLabel("Descrição:");
-        JLabel lblValor = new JLabel("Valor:");
-
-        txtDescricao = new JTextField(itemSelecionado[1].toString());
-        txtValor = new JTextField(itemSelecionado[2].toString());
-
-        panel.add(lblDescricao);
-        panel.add(txtDescricao);
-        panel.add(lblValor);
-        panel.add(txtValor);
-
-        JButton btnAtualizar = new JButton("Atualizar");
-        btnAtualizar.addActionListener(e -> {
-            atualizarItem();
-        });
-        panel.add(btnAtualizar);
-
-        add(panel);
-        setVisible(true);
-    }
-
-    private void atualizarItem() {
-        String novaDescricao = txtDescricao.getText();
-        String novoValor = txtValor.getText();
-        int id = (int) itemSelecionado[0];
-
-        Connection conexao = null;
-        PreparedStatement statement = null;
-        try {
-            conexao = DataBaseConnection.conectar();
-            String query = "UPDATE Produtos SET Descricao = ?, Preco = ? WHERE Id = ?";
-            statement = conexao.prepareStatement(query);
-            statement.setString(1, novaDescricao);
-            statement.setString(2, novoValor);
-            statement.setInt(3, id);
-            statement.executeUpdate();
-            JOptionPane.showMessageDialog(this, "Valores atualizados com sucesso!");
-            dispose();
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Erro ao atualizar os valores: " + ex.getMessage());
-        } finally {
-            if (statement != null) {
-                try {
-                    statement.close();
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                }
-            }
-            if (conexao != null) {
-                try {
-                    conexao.close();
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                }
-            }
-        }
-    }
-}
-
-
-
+//////////////REMOVER ITEM 
 
 class RemoverItem extends JFrame {
     private JTextField txtId;
@@ -284,7 +120,7 @@ class RemoverItem extends JFrame {
 
         int id = Integer.parseInt(idText);
         try (Connection conexao = DataBaseConnection.conectar();
-             PreparedStatement statement = conexao.prepareStatement("DELETE FROM produtos WHERE Id = ?")) {
+             PreparedStatement statement = conexao.prepareStatement("UPDATE produtos SET Ativo = FALSE WHERE Id = ?")) {
 
             statement.setInt(1, id);
             int linhasAfetadas = statement.executeUpdate();
@@ -302,6 +138,96 @@ class RemoverItem extends JFrame {
 
 
 
+//////////////EDITAR ITEM 
+
+class EditarItemFrame extends JFrame {
+    private JTextField txtDescricao;
+    private JTextField txtValor;
+    private JTextField txtAtivo;
+    private Object[] itemSelecionado;
+
+    public EditarItemFrame(Object[] itemSelecionado) {
+        this.itemSelecionado = itemSelecionado;
+
+        setTitle("Editar Item");
+        setSize(300, 200);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLocationRelativeTo(null);
+
+        JPanel panel = new JPanel(new GridLayout(4, 2));
+        JLabel lblDescricao = new JLabel("Descrição:");
+        JLabel lblValor = new JLabel("Valor:");
+        JLabel lblAtivo = new JLabel("Ativo:");
+
+        txtDescricao = new JTextField(itemSelecionado.length > 1 ? itemSelecionado[1].toString() : "");
+        txtValor = new JTextField(itemSelecionado.length > 2 ? itemSelecionado[2].toString() : "");
+        txtAtivo = new JTextField(itemSelecionado.length > 3 ? itemSelecionado[3].toString() : "");
+
+        panel.add(lblDescricao);
+        panel.add(txtDescricao);
+        panel.add(lblValor);
+        panel.add(txtValor);
+        panel.add(lblAtivo);
+        panel.add(txtAtivo);
+
+        JButton btnAtualizar = new JButton("Atualizar");
+        btnAtualizar.addActionListener(e -> {
+            atualizarItem();
+        });
+        panel.add(btnAtualizar);
+
+        add(panel);
+        setVisible(true);
+    }
+
+    private void atualizarItem() {
+        String novaDescricao = txtDescricao.getText();
+        String novoValor = txtValor.getText();
+        String novoAtivoStr = txtAtivo.getText();
+
+        int id = (int) itemSelecionado[0];
+
+        Connection conexao = null;
+        PreparedStatement statement = null;
+        try {
+            conexao = DataBaseConnection.conectar();
+            String query = "UPDATE Produtos SET Descricao = ?, Preco = ?, Ativo = ? WHERE Id = ?";
+            statement = conexao.prepareStatement(query);
+            statement.setString(1, novaDescricao);
+            statement.setString(2, novoValor);
+            
+            // Convertendo para booleano se for "true" ou "false"
+            boolean novoAtivo = Boolean.parseBoolean(novoAtivoStr);
+            statement.setBoolean(3, novoAtivo);
+            
+            statement.setInt(4, id);
+            statement.executeUpdate();
+            JOptionPane.showMessageDialog(this, "Valores atualizados com sucesso!");
+            dispose();
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Erro ao atualizar os valores: " + ex.getMessage());
+        } finally {
+            if (statement != null) {
+                try {
+                    statement.close();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            if (conexao != null) {
+                try {
+                    conexao.close();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
+    }
+}
+
+
+
+//////////////LISTAR ITENS 
 
 class ListagemDoBanco {
     private Connection conexao;
@@ -316,16 +242,21 @@ class ListagemDoBanco {
         ResultSet rs = null;
         try {
             stmt = conexao.createStatement();
-            rs = stmt.executeQuery("SELECT * FROM produtos");
-
-            for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
-                model.addColumn(rs.getMetaData().getColumnName(i));
+            rs = stmt.executeQuery("SELECT * FROM produtos WHERE ativo = 1");
+            ResultSetMetaData metaData = rs.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            
+            //informações das colunas
+            for (int i = 1; i <= columnCount; i++) {
+                model.addColumn(metaData.getColumnName(i));
             }
 
+            //informações das linhas
             while (rs.next()) {
-                Object[] row = new Object[rs.getMetaData().getColumnCount()];
-                for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
-                    row[i - 1] = rs.getObject(i);
+                Object[] row = new Object[columnCount];
+                int index = 0;
+                for (int i = 1; i <= columnCount; i++) {
+                    row[index++] = rs.getObject(i);
                 }
                 model.addRow(row);
             }
@@ -342,6 +273,10 @@ class ListagemDoBanco {
 
 }
 
+
+
+
+//////////////FILTRAR ITEM
 
 class FiltrarItemFrame extends JFrame implements ActionListener {
     JTextField txtId, txtDescricao;
@@ -405,7 +340,7 @@ class FiltrarItemFrame extends JFrame implements ActionListener {
             }
             
             // Prepara a consulta SQL com os critérios de filtragem
-            String query = "SELECT * FROM produtos WHERE (Id = ? OR ? = 0) AND (Descricao = ? OR ? = '')";
+            String query = "SELECT * FROM produtos WHERE (Id = ? OR ? = 0) AND (Descricao LIKE CONCAT('%', ?, '%') OR ? = ''); ";
             statement = conexao.prepareStatement(query);
             statement.setInt(1, id);
             statement.setInt(2, id);
@@ -416,21 +351,23 @@ class FiltrarItemFrame extends JFrame implements ActionListener {
             rs = statement.executeQuery();
             if (!rs.isBeforeFirst()) {
                 JOptionPane.showMessageDialog(null, "Nenhum produto encontrado.");
-                return model; // Retorna o modelo vazio, pois nenhum produto foi encontrado
+                return model; // Retorna o modelo vazio
             }
-            // Adiciona as colunas ao modelo
-            for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
-                model.addColumn(rs.getMetaData().getColumnName(i));
+         // Adiciona as colunas ao modelo
+            ResultSetMetaData metaData = rs.getMetaData();
+            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                model.addColumn(metaData.getColumnName(i));
             }
 
             // Adiciona as linhas ao modelo
             while (rs.next()) {
-                Object[] row = new Object[rs.getMetaData().getColumnCount()];
-                for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
+                Object[] row = new Object[metaData.getColumnCount()];
+                for (int i = 1; i <= metaData.getColumnCount(); i++) {
                     row[i - 1] = rs.getObject(i);
                 }
                 model.addRow(row);
             }
+
         } catch (SQLException ex) {
             ex.printStackTrace();
         } finally {

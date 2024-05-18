@@ -3,11 +3,15 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DataBaseConnection {
-	private static final String URL = "jdbc:mysql://localhost:3306/MysqlVendas";
+	private static final String URL = "jdbc:mysql://localhost:3306/MysqlVendas"; //LOCALHOST
+	//private static final String URL = "jdbc:mysql://roundhouse.proxy.rlwy.net:56045/railway";
+
     // Nome de usuário do banco de dados
     private static final String USUARIO = "root";
     // Senha do banco de dados
-    private static final String SENHA = "admin";
+    private static final String SENHA = "admin"; //LOCALHOST
+    //private static final String SENHA = "daYVoxUdJshpxILOKdhNhHkkkWSaZeas";
+
 
     // Método para estabelecer a conexão com o banco de dados
     public static Connection conectar() {
