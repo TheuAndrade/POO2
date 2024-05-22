@@ -86,6 +86,7 @@ public class VendasFrame extends JFrame implements ActionListener {
         return clientes.toArray(new String[0]);
     }
 
+    //BUSCAR PRODUTOS
     private String[] getProdutos() {
         ArrayList<String> produtos = new ArrayList<>();
         try (Statement stmt = conexao.createStatement();
@@ -99,6 +100,7 @@ public class VendasFrame extends JFrame implements ActionListener {
         return produtos.toArray(new String[0]);
     }
 
+    //ADICIONAR VENDAS 
     private void adicionarVenda() {
         String cliente = (String) comboClientes.getSelectedItem();
         String produto = (String) comboProdutos.getSelectedItem();
@@ -112,7 +114,6 @@ public class VendasFrame extends JFrame implements ActionListener {
         try {
             conexao.setAutoCommit(false);
 
-            // Inserir pedido
             try (PreparedStatement stmt = conexao.prepareStatement("INSERT INTO pedidos (dtCadastro, clienteID, quantidade, produtoId) VALUES (?, ?, ?, ?)")) {
                 stmt.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
                 stmt.setInt(2, getClienteId(cliente));
@@ -167,6 +168,7 @@ public class VendasFrame extends JFrame implements ActionListener {
         }
     }
 
+    //LISTAR PEDIDOS DO DIA 
     private void listarPedidos() {
     	
     	LocalDate hoje = LocalDate.now();
